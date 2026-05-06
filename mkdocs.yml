@@ -1,0 +1,78 @@
+site_name: Auth Engine
+site_description: Production-grade authentication API — OTP login, JWT sessions, RBAC, license keys.
+site_url: https://sunilk240.github.io/auth-engine-documentation/
+repo_url: https://github.com/Sunilk240/auth-engine-documentation
+repo_name: auth-engine-docs
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.top
+    - navigation.sections
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+  font:
+    text: Inter
+    code: JetBrains Mono
+
+nav:
+  - Home: index.md
+  - Getting Started: 01-getting-started.md
+  - OTP Authentication: 02-otp-authentication.md
+  - Token Management: 03-token-management.md
+  - License Keys: 04-license-keys.md
+  - Roles & Tenants: 05-roles-and-tenants.md
+  - Error Reference: 06-error-reference.md
+  - Security Checklist: 07-security-checklist.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Sunilk240/auth-engine-documentation

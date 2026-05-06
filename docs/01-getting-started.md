@@ -33,18 +33,16 @@ APP_SLUG    = attendance-app
 
 ## Step 3 — Get Your JWT Public Key
 
-In the portal, open your app → click **"View Public Key"**.
+In the portal, go to **🔑 Keys** in the sidebar.
 
-Copy the RSA public key — it looks like:
+You'll see a base64-encoded key — copy it with one click:
 
 ```
------BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...
------END PUBLIC KEY-----
+LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0t...  (long base64 string)
 ```
 
-This key lets your backend **verify** JWTs issued by the auth engine.  
-You cannot forge new tokens with it — the auth engine holds the private key.
+!!! info "Why base64?"
+    The key is stored as a single-line base64 string — safe for env vars on any platform (Render, Railway, `.env` files). Your backend decodes it at startup.
 
 ---
 
@@ -58,53 +56,58 @@ AUTH_ENGINE_URL=https://auth-engine-efb8.onrender.com
 AUTH_APP_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 AUTH_APP_SECRET=<your 64-char secret>
 AUTH_APP_SLUG=attendance-app
-JWT_PUBLIC_KEY=-----BEGIN PUBLIC KEY-----\nMIIBIjAN...
+JWT_PUBLIC_KEY=LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0t...  # base64 from Keys page
 ```
 
-**Security rules — non-negotiable:**
-- ✅ Store in server-side environment variables only
-- ✅ Pass `AUTH_APP_ID` and `AUTH_APP_SECRET` only in backend-to-backend API calls
-- ❌ Never put these in frontend JavaScript or mobile app code
-- ❌ Never commit them to Git — add `.env` to `.gitignore`
-- ❌ Never log them
+!!! warning "Security rules"
+    - ✅ Store in **server-side** environment variables only
+    - ✅ Pass `AUTH_APP_ID` and `AUTH_APP_SECRET` only in backend-to-backend calls
+    - ❌ Never put these in frontend JS, mobile bundles, or client-side code
+    - ❌ Never commit to Git — add `.env` to `.gitignore`
+    - ❌ Never log them
 
 ---
 
 ## Step 5 — Understand the Architecture
 
-```
-Your App Frontend / Mobile
-        │
-        │  User enters phone/email
-        │  Calls YOUR backend API (e.g. POST /login/send-otp)
-        ▼
-Your App Backend
-        │  Holds: APP_ID, APP_SECRET, APP_SLUG, JWT_PUBLIC_KEY
-        │
-        ├──▶ POST https://auth-engine-efb8.onrender.com/auth/send-otp
-        ├──▶ POST https://auth-engine-efb8.onrender.com/auth/verify-otp
-        ├──▶ POST https://auth-engine-efb8.onrender.com/auth/refresh
-        └──▶ POST https://auth-engine-efb8.onrender.com/auth/revoke
-                        │
-                        ▼
-                 Returns JWT + refresh_token
-                        │
-        ┌───────────────┘
-        ▼
-Your App Backend
-        │  Stores refresh_token in HttpOnly cookie
-        │  Returns access_token to frontend (in response body)
-        ▼
-Your App Frontend
-        │  Keeps access_token in memory (not localStorage)
-        │  Sends: Authorization: Bearer <access_token>
-        │  on every protected API call to YOUR backend
-        ▼
-Your App Backend
-        │  Calls verifyToken(access_token) using JWT_PUBLIC_KEY
-        │  No network call needed — purely local verification
-        └──▶ Gets: user_id, roles, tenant_id from token payload
-```
+=== "Request Flow"
+
+    ```
+    Browser / Mobile App
+         │  Calls YOUR backend (never the auth engine directly)
+         ▼
+    Your Backend                         Auth Engine
+         │─── POST /auth/send-otp ──────▶│
+         │◀─── { otp_request_id } ───────│
+         │                               │ (sends OTP to user's phone/email)
+         │
+         │  (user enters OTP)
+         │
+         │─── POST /auth/verify-otp ────▶│
+         │◀─── { access_token,           │
+         │       refresh_token }  ────────│
+         │
+         │  Stores refresh_token in HttpOnly cookie
+         │  Returns access_token to browser (in memory only)
+    ```
+
+=== "Token Verification"
+
+    ```
+    Browser / Mobile App
+         │  Authorization: Bearer <access_token>
+         ▼
+    Your Backend
+         │  jwt.verify(token, JWT_PUBLIC_KEY)  ← local, no network call
+         │  Gets: user_id, roles, tenant_id from JWT payload
+         ▼
+    Protected resource returned
+    ```
+
+!!! tip "No DB hit per request"
+    Once a token is issued, your backend verifies it **locally** using the public key.
+    No call to the auth engine is needed on every request.
+
 
 ---
 
@@ -117,7 +120,8 @@ Copy this into your Node.js/Express backend. Requires only the `jsonwebtoken` pa
 import jwt from 'jsonwebtoken';
 import type { Request, Response, NextFunction } from 'express';
 
-const PUBLIC_KEY = process.env.JWT_PUBLIC_KEY!;
+// Decode base64 key at startup — zero overhead per request
+const PUBLIC_KEY = Buffer.from(process.env.JWT_PUBLIC_KEY!, 'base64').toString('utf8');
 const APP_SLUG   = process.env.AUTH_APP_SLUG!;
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {

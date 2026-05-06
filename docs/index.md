@@ -1,4 +1,4 @@
-# Unified Auth Engine — Developer Documentation
+# Auth Engine — Developer Documentation
 
 > **This is public-facing documentation.** No credentials, secrets, or internal implementation details are included.
 > Register at the portal to get your credentials.

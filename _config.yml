@@ -1,4 +1,0 @@
-theme: jekyll-theme-minimal
-title: Auth Engine — Developer Docs
-description: Production-grade authentication API. OTP login, JWT sessions, RBAC, license keys.
-show_downloads: false
