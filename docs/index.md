@@ -81,14 +81,6 @@ None of these ever go to the frontend or mobile app.
 
 ---
 
-## Base URL
-
-```
-https://auth-engine-efb8.onrender.com
-```
-
----
-
 ## API Conventions
 
 - All requests: `Content-Type: application/json`
